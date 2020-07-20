@@ -1,0 +1,84 @@
+
+FROM slaclcls/lcls-py2:ana-2.0.6
+LABEL maintainer="Chuck Yoon <yoon82@stanford.edu>"
+# adapted from Anna Giannakou <agiannakou@lbl.gov> and Johannes Blaschke <jpblaschke@lbl.gov>
+
+#-------------------------------------------------------------------------------
+RUN \
+    apt-get --yes install                                                      \
+        build-essential                                                        \
+        libhdf5-dev                                                            \
+        libgsl-dev                                                             \
+        libgtk2.0-dev                                                          \
+        libcairo2-dev                                                          \
+        libpango1.0-dev                                                        \
+        libgdk-pixbuf2.0-dev                                                   \
+        libfftw3-dev                                                           \
+        libcbf-dev                                                             \
+        libncurses5-dev                                                        \
+        libpng-dev                                                             \
+        libtiff5-dev                                                           \
+        cmake
+
+# Download CrystFEL v0.8.0 and install under /img
+# crystfel-0.9.0 requires cmake v3.12+ (not available in apt as of 6/8/20)     
+# which reulsts in CMP0074 error. It may also require "apt install flex bison" 
+WORKDIR /img
+RUN mkdir -p /img/crystfel
+RUN cd /img/crystfel/ &&                                                       \
+    ls &&                                                                      \
+    wget https://www.desy.de/~twhite/crystfel/crystfel-0.8.0.tar.gz &&         \
+    tar -xzf crystfel-0.8.0.tar.gz &&                                          \
+    cd crystfel-0.8.0 &&                                                       \
+    mkdir build && cd build && cmake .. && make install &&                     \
+    cd /img/crystfel/ &&                                                       \
+    rm -rf crystfel-0.8.0.tar
+
+# Download CCP4+ShelX
+RUN mkdir -p /img/ccp4
+RUN cd /img/cpp4 &&                                                            \
+    ls &&                                                                      \
+    wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1XvZ1FJFFaunq151e4WrjFkpc-My3m8XQ' -O- | sed -En 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1XvZ1FJFFaunq151e4WrjFkpc-My3m8XQ" -O ccp4-7.1.002-shelx-linux64.tar.gz &&             \
+    rm -rf /tmp/cookies.txt &&                                                 \
+    tar -xzvf ccp4-7.1.002-shelx-linux64.tar.gz &&                             \
+    cd ccp4-7.1 &&                                                             \
+    ./BINARY.setup --run-from-script &&                                        \
+    source bin/ccp4.setup-sh &&                                                \
+    cd /img/cpp4 &&                                                            \
+    rm -rf ccp4-7.1.002-shelx-linux64.tar
+
+# Download XDS
+RUN mkdir -p /img/xds
+RUN cd /img/xds &&                                                             \
+    ls &&                                                                      \
+    wget ftp://ftp.mpimf-heidelberg.mpg.de/pub/kabsch/XDS-INTEL64_Linux_x86_64.tar.gz && \
+    tar -xvf XDS-INTEL64_Linux_x86_64.tar.gz &&                                \
+    cd XDS-INTEL64_Linux_x86_64 &&                                             \
+    export PATH=$PWD:$PATH &&                                                  \
+    export KMP_STACKSIZE=8m &&                                                 \
+    cd /img/xds &&                                                             \
+    rm -rf XDS-INTEL64_Linux_x86_64.tar
+
+# Download Phenix
+RUN mkdir -p /img/phenix
+RUN cd /img/phenix &&                                                          \
+    ls &&                                                                      \
+    wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1CfC9exFJVuPugQ2n7eDAJSi9ebDfju0K' -O- | sed -En 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1CfC9exFJVuPugQ2n7eDAJSi9ebDfju0K" -O phenix-installer-1.18.2-3874-intel-linux-2.6-x86_64-centos6.tar.gz && \
+    rm -rf /tmp/cookies.txt &&                                                 \
+    tar -xzvf phenix-installer-1.18.2-3874-intel-linux-2.6-x86_64-centos6.tar.gz && \
+    cd phenix-installer-1.18.2-3874-intel-linux-2.6-x86_64-centos6 &&          \
+    ./install --prefix=/img/phenix/ &&                                         \
+    cd /img/phenix/	&&                                                         \
+    rm -rf phenix-installer-1.18.2-3874-intel-linux-2.6-x86_64-centos6.tar
+
+# Conda
+RUN mkdir -p /img/static
+
+
+# Download sfxPhasing (datasets)
+RUN mkdir -p /sfx
+RUN cd /sfx &&                                                                 \
+    wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1K_JeGuoADjfLc6tbgSMpIgWf2FycLSZz' -O- | sed -En 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1K_JeGuoADjfLc6tbgSMpIgWf2FycLSZz" -O sfxPhasing.zip &&                                \
+    unzip sfxPhasing && \
+    cd /sfx/sfxPhasing && \
+    bash -c "source /img/conda.local/env.sh && conda create --name sfx --file requirements.txt" 

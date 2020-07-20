@@ -29,3 +29,20 @@ RUN wget https://www.desy.de/~twhite/crystfel/crystfel-0.8.0.tar.gz &&         \
          cd crystfel-0.8.0 &&                                                  \
          mkdir build && cd build && cmake .. && make install
 
+# Download CCP4+ShelX
+
+#RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1XvZ1FJFFaunq151e4WrjFkpc-My3m8XQ' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1XvZ1FJFFaunq151e4WrjFkpc-My3m8XQ" -O ccp4-7.1.002-shelx-linux64.tar.gz &&                         \
+RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1XvZ1FJFFaunq151e4WrjFkpc-My3m8XQ' -O- | sed -En 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1XvZ1FJFFaunq151e4WrjFkpc-My3m8XQ" -O ccp4-7.1.002-shelx-linux64.tar.gz &&                         \
+         rm -rf /tmp/cookies.txt &&                                            \
+         tar -xzvf ccp4-7.1.002-shelx-linux64.tar.gz &&                        \
+         cd ccp4-7.1 &&                                                        \
+         ./BINARY.setup --run-from-script &&                                   \
+         source bin/ccp4.setup-sh
+
+# Download XDS
+
+RUN wget ftp://ftp.mpimf-heidelberg.mpg.de/pub/kabsch/XDS-INTEL64_Linux_x86_64.tar.gz && \
+         tar -xvf XDS-INTEL64_Linux_x86_64.tar.gz &&                          \
+         cd XDS-INTEL64_Linux_x86_64 &&                                       \
+         export PATH=$PWD:$PATH &&                                            \
+         export KMP_STACKSIZE=8m
